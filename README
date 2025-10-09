@@ -1,0 +1,99 @@
+Quickstart:
+    1.  php examples/usage_in_a_test.php
+
+Installation:
+    1.  composer install
+    2.  create database table "signals" with fields:
+            room_number, beacon_id, signal_strength
+    3.  install BLE beacons in every room.
+    4.  use PERS unit to sample every room.
+    5.  record signal results of ALL beacons in EACH room. 
+        ie:  room #410,  PERS unit detects FIVE beacons, then  insert 5 rows 
+             into the signals table like this:
+
+             INSERT INTO signals (room_number, beacon_id, signal_strength)
+             VALUES ( 410,  12345678,  50),
+                    ( 410,  12345679,  90),
+                    ( 410,  12345680,  90),
+                    ( 410,  12345681,  50),
+                    ( 410,  12345682,   5);
+
+        repeat this step for EVERY room in the building,  recording ALL the 
+        beacon IDs and signal strengths that were detected each room.
+
+    6.  modify the EmergencySignal class to enable DB connections 
+        based on the framework you are using.
+
+Usage:
+
+    - Assuming that a PERS unit has detected BLE signals in an unknown 
+        room and makes API call to your script passing an array of the 
+        BLE signals it heard and their signal strengths, like this:
+
+        $em_sig = Array(    Array( 12345678,  45),
+                            Array( 12345679,  90),
+                            Array( 12345680,  85),
+                            Array( 12345681,  60),
+                            Array( 12345682,   4)
+        );
+
+    - Create an instance of the EmergencySignal class, passing  $em_sig  like this:
+
+            $es = new EmergencySignal($em_sig);
+
+    - Find the best matching room number:
+
+            $best_match_room_number = $es->get_best_match();
+
+
+----------------------------------------------------------------------------------
+
+
+Project Summary:  Identifying Indoor Locations
+
+The Challenge:  The company, Lifestation, a major supplier of Personal Emergency Response
+System (PERS) units, was required to provide emergency call devices to hospital and hotel
+"lone workers" (nurses, housekeeping, etc.).  These units include GPS, WiFi, cellular,
+and Bluetooth connectivity, and a push button for emergency activation.
+
+The primary challenge was ensuring accurate emergency location.  GPS signal is unreliable
+indoors and, crucially, lacks the ability to determine floor level in multi-story buildings.
+
+Our initial solution:  Installing Bluetooth Low Energy (BLE) beacons in every room and
+listening for the strongest beacon signal failed because the PERS unit registered simultaneous
+detection of multiple beacons - often five or more from adjacent rooms and floors - all
+registering near-maximum signal strength.  Reliance on strongest signal strength was insufficient.
+
+Example: A PERS unit in room #410 received signals from neighboring rooms on floors 3,
+4, and 5.
+
+I was appointed to lead a project to improve the accuracy of room identification. It was
+assumed that machine learning would be required.  My core insight was to recognize that
+the unique combination and strength of all detectable beacons in any given room created
+a unique fingerprint.
+
+We conducted an initial site survey, visiting each room and recording the signal strengths
+of all beacons that could be heard in each room and stored the results in a table called
+sample_readings.
+
+When an emergency call is activated, the PERS unit reports the list of beacons that are
+detectable along with their respective signal strengths.  To find the location, we perform
+a comparison between the beacons included in the emergency signal to the readings that
+were taken during the site survey.
+
+The SQL query retrieves all sample readings that share at least one beacon in the emergency
+signal.
+
+The Algorithm: I used the Cross-Correlation Algorithm (specifically, the Pearson Correlation
+Coefficient), which uses Euclidean distance to compare the "similarity" between the emergency
+signal's fingerprint to the fingerprints of the stored sample. The highest correlation
+score identifies the correct room.
+
+Performance and Conclusion:  The project was initially estimated to require three developers
+for a month, with time allocated for researching complex machine learning solutions.
+
+I wrote my solution in four hours.  In a real-world hotel setting (500 rooms), the time
+required to perform the SQL query and run the comparison algorithm on each result is able
+to identify the room in less than 2ms.  This solution, using a fundamental statistical
+algorithm, provides an immediate response with 100% accuracy - and saved three months
+of development time.
