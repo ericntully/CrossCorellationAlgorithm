@@ -1,6 +1,34 @@
 Quickstart:
     1.  php examples/usage_in_a_test.php
 
+You've given panic devices to the housekeeping staff at your hotel to call for help in an 
+emergency.  Since GPS wouldn't be able to determine what floor of the hotel they're on, 
+you've installed radio beacons in each hotel room broadcasting their specific location.  
+
+Pressing the panic button causes the device to listen for as many beacons as it can hear 
+and it reports the beacon with the strongest signal strength.
+
+The problem is that the radio signals are stronger than you expected and the panic 
+device is able to hear five or six beacons (on different floors, no less), each with
+100% signal strength.
+
+The solution:  Do some pre-processing to take a one-time sample of the hotel.  Stop in 
+each room to take a reading of ALL the signals that can be heard there.  The list of 
+beacons (and their signal strengths) form a unique fingerprint.  
+
+For example, there is ONLY ONE ROOM in the hotel where 
+this set of beacons can be heard at these signal strengths:
+
+[	"Room 310,  80%"  , 	"Room 311, 98%"   , 	"Room 312, 100%"   , 
+	"Room 410, 100%"  , 	"Room 411, 98%"   , 	"Room 412, 85%"   ,
+	"Room 510,  40%"  , 	"Room 511, 100%"   , 	"Room 512, 75%"   
+]
+
+When an emergency call is received with a list of beacon signals, use the cross-corellation 
+algorithm to find room with the best statistical match. Even when the panic device can hear 
+five (or even ten) beacons, all with 100% signal strength, this statistical technique will 
+identify the room's location with 100% accuracy.
+
 Installation:
     1.  composer install
     2.  create database table "signals" with fields:
@@ -51,21 +79,20 @@ Usage:
 
 Project Summary:  Identifying Indoor Locations
 
-The Challenge:  The company, Lifestation, a major supplier of Personal Emergency Response
-System (PERS) units, was required to provide emergency call devices to hospital and hotel
-"lone workers" (nurses, housekeeping, etc.).  These units include GPS, WiFi, cellular,
-and Bluetooth connectivity, and a push button for emergency activation.
+Background: The company, a major supplier of PERS devices (Personal Emergency Response
+System), was asked to provide emergency call devices to hospital and hotel "lone workers" 
+(nurses, housekeeping, etc.).  The units include GPS, WiFi, cellular, and Bluetooth, 
+connections.  They have a single push button for use in an emergency.
 
-The primary challenge was ensuring accurate emergency location.  GPS signal is unreliable
-indoors and, crucially, lacks the ability to determine floor level in multi-story buildings.
+The challenge:  Identifying the precise location during an emergency.  GPS signal is 
+unreliable indoors and, more importantly, lacks the ability to determine floor level 
+in multi-story buildings.
 
 Our initial solution:  Installing Bluetooth Low Energy (BLE) beacons in every room and
-listening for the strongest beacon signal failed because the PERS unit registered simultaneous
-detection of multiple beacons - often five or more from adjacent rooms and floors - all
-registering near-maximum signal strength.  Reliance on strongest signal strength was insufficient.
-
-Example: A PERS unit in room #410 received signals from neighboring rooms on floors 3,
-4, and 5.
+listening for the strongest beacon signal failed because the PERS unit registered 
+simultaneous detection of multiple beacons - often five or more from adjacent rooms and 
+floors - all registering near-maximum signal strength.  Reliance on strongest signal 
+strength was insufficient.
 
 I was appointed to lead a project to improve the accuracy of room identification. It was
 assumed that machine learning would be required.  My core insight was to recognize that
